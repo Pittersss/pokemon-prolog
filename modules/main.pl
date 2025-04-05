@@ -55,8 +55,6 @@ iniciar_itens :-
     assertz(item('Hyper Potion', 5)),
     assertz(item('Full Restore', 10)).
 
-get_Hp(Nome, HP) :- pokemon_battle(Nome, HP, _, _, _, _, _).
-
 get_Hp_max(Nome, HP):- pokemon(Nome, _, _, HP, _, _, _, _, _, _, _, _, _).
 
 calcula_hp(CurrentHP, MaxHP, Change, NewHP) :-
@@ -68,10 +66,9 @@ calcula_hp(CurrentHP, MaxHP, Change, NewHP) :-
 
 % Atualiza a vida de um pokemon
 altera_hp(Nome, Vida) :-
-    get_Hp(Nome, HP),
+    pokemon_battle(Nome, HP, Atk1, Atk2, Atk3, Atk4, Condicao),
     get_Hp_max(Nome, HP_max),
     calcula_hp(HP, HP_max, Vida, Nova_vida),
-    pokemon_battle(Nome, _, Atk1, Atk2, Atk3, Atk4, Condicao),
     retract(pokemon_battle(Nome, _, _, _, _, _, _)),
     assertz(pokemon_battle(Nome, Nova_vida, Atk1, Atk2, Atk3, Atk4, Condicao)).
 
