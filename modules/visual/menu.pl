@@ -102,18 +102,8 @@ confirm_selection :-
     (   length(Selected, 4)
     -> 
         format('Pokémons selecionados: ~w~n', [Selected]),
-        battle(Selected)
+        retractall(selecionados(_)),
+        assertz(selecionados(Selected))
     ;   send(@display, inform, 'Selecione exatamente 4 Pokémons')
     ).
 
-
-battle(Selected) :-
-  
-    % Continua no terminal
-    format('~n=== BATALHA INICIADA ===~n~nTime: ~w~n~n', [Selected]),
-    % Aperte Ctrl + D
-    write('Selecione um ataque: '),
-    write(' Ataque 1'),
-    write(' Ataque 2'),
-    read(Ataque),
-    format('~nAtaque escolhido: ~w~n', [Ataque]).
