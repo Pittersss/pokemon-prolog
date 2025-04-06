@@ -29,22 +29,22 @@ processar_linha_pokemon(row(Nome, Tipo1, Tipo2, HP, FAtk, FDef, SAtk, SDef, Spd,
 
 % Gera pokemon_battle inicial a partir de um Pokémon
 gera_pokemon_battle_inicial(NomePokemon) :-
-    pokemon(NomePokemon, T1, T2, HP, FAtk, FDef, SAtk, SDef, Spd, A1, A2, A3, A4),
-    buscar_ataque(A1, Atk1),
-    buscar_ataque(A2, Atk2),
-    buscar_ataque(A3, Atk3),
-    buscar_ataque(A4, Atk4),
+    pokemon(NomePokemon, _, _, HP, _, _, _, _, _, A1, A2, A3, A4),
+    attack(A1,_,_,_,_,_,Pp_Atk1,_),
+    attack(A2,_,_,_,_,_,Pp_Atk2,_),
+    attack(A3,_,_,_,_,_,Pp_Atk3,_),
+    attack(A4,_,_,_,_,_,Pp_Atk4,_),
     assertz(pokemon_battle(
         NomePokemon,
         HP,
-        Atk1,
-        Atk2,
-        Atk3,
-        Atk4,
+        Pp_Atk1,
+        Pp_Atk2,
+        Pp_Atk3,
+        Pp_Atk4,
         ''
     )).
 
-% Busca ataque
+% Busca ataque com base no nome
 buscar_ataque(Nome, Attack) :-
     attack(Nome, Tipo, Categoria, Poder, Precisao, PP, MaxPP, Critico),
     Attack = attack(Nome, Tipo, Categoria, Poder, Precisao, PP, MaxPP, Critico).
@@ -77,28 +77,23 @@ altera_condicao(Nome):-
     retract(pokemon_battle(Nome, _, _, _, _, _, _)),
     assertz(pokemon_battle(Nome, HP, Atk1, Atk2, Atk3, Atk4, '')).
 
-utiliza_item(NomePkm, NomeItm):-
+utiliza_item(NomePkm, 1):-
         pokemon_battle(NomePkm,Hp,_,_,_,_,Condicao),
         item(NomeItm,Qtd),
         Qtd > 0, % melhor checar a quantidade no momento de batalha, pq aqui ele só para sem retornar false.
         NovaQtd is Qtd - 1,
         retract(item(NomeItm,_)),
         assertz(item(NomeItm,NovaQtd)),
-        NomeItm == 'Hyper Potion' -> altera_hp(NomePkm,120);
-        (
-            NomeItm == 'Full Restore' -> altera_condicao(NomePkm);!
-        ).
+        altera_hp(NomePkm,120).
 
-% tira hp e aplica Condicao pra testar se os itens estao funcionando
-testehyper(Nome):-
-    pokemon_battle(Nome, HP, Atk1, Atk2, Atk3, Atk4, _),
-    retract(pokemon_battle(Nome, _, _, _, _, _, _)),
-    assertz(pokemon_battle(Nome, HP, Atk1, Atk2, Atk3, Atk4, 'uiii')).
-
-testefull(Nome):-
-    pokemon_battle(Nome, _, Atk1, Atk2, Atk3, Atk4, Cond),
-    retract(pokemon_battle(Nome, _, _, _, _, _, _)),
-    assertz(pokemon_battle(Nome, 1, Atk1, Atk2, Atk3, Atk4, Cond)).
+utiliza_item(NomePkm, 2):-
+        pokemon_battle(NomePkm,Hp,_,_,_,_,Condicao),
+        item(NomeItm,Qtd),
+        Qtd > 0, % melhor checar a quantidade no momento de batalha, pq aqui ele só para sem retornar false.
+        NovaQtd is Qtd - 1,
+        retract(item(NomeItm,_)),
+        assertz(item(NomeItm,NovaQtd)),
+        altera_condicao(NomePkm).
 
 % Inicialização completa
 carregar_tudo :-
@@ -107,60 +102,65 @@ carregar_tudo :-
     iniciar_placar,
     iniciar_itens.
 
-main :-
-    writeln('===== Sistema de Batalha Pokémon ====='),
+% Transforma os nomes de uma lista em pokemon_battle.
+gera_pokemons_battle(ListaPokemons):-
+    maplist(gera_pokemon_battle_inicial, ListaPokemons).
+
+% Coloca o próximo pokémon disponível
+gira_lista([Head|Tail], Lista):-
+    append(Tail, Head, Lista).
+
+% Permite o usuário escolher um ataque
+escolha_aliado([PkmnAtual|Pkmns], [EnAtual|EnPkmns],1):-
+    pokemon(PkmnAtual, _, _, _, _, _, _, _, _, Atk1,Atk2,Atk3,Atk4),
+    pokemon_battle(PkmnAtual,_,PP1,PP2,PP3,PP4,_),
+    format('escolha o ataque:\n1: ~w - ~w\n2: ~w - ~w\n3: ~w - ~w\n4: ~w - ~w\n', [Atk1,PP1,Atk2,PP2,Atk3,PP3,Atk4,PP4]),
+    read(X),
+    (writeln('ataque aqui'),
+    turn_inimigo([PkmnAtual|Pkmns], [EnAtual|EnPkmns]) ; 
+        writeln('escolha errada, escolha de novo'), 
+        turn_aliado_choice([PkmnAtual|Pkmns], [EnAtual|EnPkmns])).
+
+% Permite o usuário escolher um item
+escolha_aliado([PkmAtual|Pkmns], [EnAtual|EnPkmns],2):-
+    findall(Qtd, item(Nome,Qtd),Qtds),
+    format('escolha o item:\n1. Hyper Potion - ~w\n2. Full Restore - ~w\n', Qtds),
+    read(X),
+    (utiliza_item(PkmAtual,X), turn_inimigo([PkmAtual|Pkmns], [EnAtual|EnPkmns]) ; 
+        writeln('esgotado! escolha novamente'), turn_aliado_choice([PkmAtual|Pkmns], [EnAtual|EnPkmns])).
+
+% Se só tiver 1 pokémon, não pode mudar.
+escolha_aliado([Head|[]],EnPkmns,3):- 
+    writeln('não eh possivel trocar de pokemon :('),
+    turn_aliado_choice([Head|[]],EnPkmns).
+
+% Muda pro próximo pokémon disponível
+escolha_aliado(UsuPkmns, EnPkmns,3):-
+    gira_lista(UsuPkmns, [NovoPkmn|Tail]),
+    format('eu escolho vc ~w!!\n', [NovoPkmn]),
+    turn_inimigo(UsuPkmns, EnPkmns).
+
+% Entrada inválida
+escolha_aliado(UsuPkmns, EnPkmns,_):-
+    writeln('escolha de novo'),
+    turn_aliado_choice(UsuPkmns, EnPkmns).
+
+% Menu de escolhas do usuário
+turn_aliado_choice(UsuPkmns, EnPkmns):-
+    % printar os dados dos 2 pokemons aqui
+    writeln('escolha 1:ataque 2:item 3:mudar pokemon'),
+    read(X),
+    escolha_aliado(UsuPkmns, EnPkmns, X).
+
+% Turn do inimigo
+turn_inimigo(UsuPkmns, EnPkmns):-
+    writeln('nada ainda').
+
+main:-
     carregar_tudo,
-    
-    % Mostra alguns dados carregados
-    writeln('\n=== Pokémons Carregados =='),
-    findall(Nome, pokemon(Nome, _, _, _, _, _, _, _, _, _, _, _, _), ListaPokemons),
-    write('Pokémons: '), writeln(ListaPokemons),
-    
-    writeln('\n=== Ataques Carregados =='),
-    findall(Nome, attack(Nome, _, _, _, _, _, _, _), ListaAtaques),
-    write('Ataques: '), writeln(ListaAtaques),
-    
-    writeln('\n=== Itens Carregados =='),
-    findall((Nome,Qtd), item(Nome,Qtd), ListaItens),
-    write('Itens: '), writeln(ListaItens),
-
-    % Testa a criação de uma batalha
-    writeln('\n=== Teste de Batalha =='),
-    gera_pokemon_battle_inicial('Pikachu'),
-    
-    % Mostra o Pokémon em batalha
-    writeln('\n=== Estado da Batalha =='),
-    pokemon_battle('Pikachu', HP, Atk1, Atk2, Atk3, Atk4, Condicao),
-    write('Pokémon: '), writeln('Pikachu'),
-    write('HP: '), writeln(HP),
-    write('Ataque 1: '), writeln(Atk1),
-    write('Condição: '), writeln(Condicao),
-    
-    writeln('\n=== Estatisticas =='),
-    get_estatisticas(X), writeln(X), 
-    incrementa_derrota, incrementa_derrota, incrementa_vitoria, 
-    writeln('Acrescido 3 partidas e 1 vitoria:'),
-    get_estatisticas(Y), writeln(Y),
-
-    writeln('\n=== Teste de uso de itens =='),
-    gera_pokemon_battle_inicial('Charizard'),
-    pokemon_battle('Charizard', PHP, PAtk1, PAtk2, PAtk3, PAtk4, PCondicao),
-    write('Antes:::::::::::::\nPokémon: Charizard'),
-    write('\nHP: '), writeln(PHP),
-    write('Condição: '), writeln(PCondicao),
-    testefull('Charizard'),
-    testehyper('Charizard'),
-    pokemon_battle('Charizard', P1HP, P1Atk1, P1Atk2, P1Atk3, P1Atk4, P1Condicao),
-    write('\nDurante:::::::::::::::::::'),
-    write('\nHP: '), writeln(P1HP),
-    write('Condição: '), writeln(P1Condicao),
-    utiliza_item('Charizard', 'Hyper Potion'),
-    utiliza_item('Charizard', 'Full Restore'),
-    pokemon_battle('Charizard', P2HP, P2Atk1, P2Atk2, P2Atk3, P2Atk4, P2Condicao),
-    write('\nDepois::::::::::::'),
-    write('\nHP: '), writeln(P2HP),
-    write('Condição: '), writeln(P2Condicao),
-    findall((Nome,Qtd), item(Nome,Qtd), ListaItens2),
-    write('Itens: '), writeln(ListaItens2),
-    
-    writeln('\n=== Fim do Teste ===').
+    X = ['Pidgeot', 'Charizard', 'Pikachu', 'Onix', 'Slowbro'],
+    Y = ['Butterfree', 'Hitmonlee', 'Cloyster', 'Seadra', 'Gengar'],
+    gera_pokemons_battle(X),
+    gera_pokemons_battle(Y),
+    % aqui faz um if pra ver quem vai primeiro
+    turn_aliado_choice(X,Y).
