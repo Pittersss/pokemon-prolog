@@ -1,12 +1,11 @@
 :- module(menu, [create_menu/0]).
 :- use_module(library(pce)).
-:- dynamic selected_pokemons/1. % Variável global dinâmica
 :- use_module('selection', [open_selection/0]).
+
 
 %% Cria a janela principal
 create_menu :-
     % Inicializa a variável global
-    nb_setval(selected_count, 0),
     new(Window, frame('Pokemon Prolog')),
     new(Dialog, dialog),
     new(MenuButton, button('Jogar', message(@prolog, open_selection))),
@@ -20,4 +19,3 @@ create_menu :-
     send(Window, open),
     send(Window, size, size(400, 300)),
     send(Window, position, point(600, 150)).
-
