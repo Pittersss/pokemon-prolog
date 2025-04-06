@@ -79,6 +79,11 @@ altera_condicao(Nome):-
 
 utiliza_item(NomePkm, NomeItm):-
         pokemon_battle(NomePkm,Hp,_,_,_,_,Condicao),
+        item(NomeItm,Qtd),
+        Qtd > 0, % melhor checar a quantidade no momento de batalha, pq aqui ele só para sem retornar false.
+        NovaQtd is Qtd - 1,
+        retract(item(NomeItm,_)),
+        assertz(item(NomeItm,NovaQtd)),
         NomeItm == 'Hyper Potion' -> altera_hp(NomePkm,120);
         (
             NomeItm == 'Full Restore' -> altera_condicao(NomePkm);!
@@ -155,5 +160,7 @@ main :-
     write('\nDepois::::::::::::'),
     write('\nHP: '), writeln(P2HP),
     write('Condição: '), writeln(P2Condicao),
-
+    findall((Nome,Qtd), item(Nome,Qtd), ListaItens2),
+    write('Itens: '), writeln(ListaItens2),
+    
     writeln('\n=== Fim do Teste ===').
