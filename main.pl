@@ -5,6 +5,9 @@
 % attack(Nome, Tipo, Categoria, Poder, Precisão, PP, MaxPP, Critico)
 % pokemon_battle(Nome, Pokemon, CurrentHP, Pp_Atk1, Pp_Atk2, Pp_Atk3, Pp_Atk4, Condicao)
 
+item('Hyper Potion',5).
+item('Full Restore',5).
+
 % Carrega o csv de ataques.
 carregar_ataques :-
     retractall(attack(_, _, _, _, _, _, _, _)), % Limpa a base de ataques
@@ -131,22 +134,14 @@ determina_condicao(_,'').
 
 % Determina se um golpe é crítico ou não
 calcula_critico(N,R):-
-    random_1_to_100(N1),
+    random_between(1, 100, N1),
     R1 is N*4,
     N1 < R1 -> R = true; R = false.
 
 % Calcula aleatoriedade do dano de um golpe
 calcula_random_golpe(R):-
     random_between(80,100,R1),
-    R is R1/100
-
-% Determinar se um ataque aplica efeito negativo
-pode_aplicar_status(R):-
-    random_1_to_100(R1),
-    R1 =< 10 -> R = true; R = false.
-
-random_1_to_100(R) :-
-    random_between(1, 100, R).
+    R is R1/100.
 
 % Inicialização completa
 carregar_tudo :-
@@ -155,7 +150,7 @@ carregar_tudo :-
 
 % Função que determina se um golpe acerta
 calcula_acerto(C, R):-
-    random_1_to_100(R1),
+    random_between(1, 100, R1),
     C >= R1 -> R = true; R = false.
 
 % Calcula o novo hp de um pokemon
@@ -175,49 +170,106 @@ altera_hp(Nome, Vida) :-
     retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
     assertz(pokemon_battle(Nome, Pokemon, Nova_vida, Atk1, Atk2, Atk3, Atk4, Condicao)).
 
-calculate_damage(Attack, Defense, Power, Stab, TypeEffectiveness, Burn, Critical, Damage) :-
+calculate_damage(Attack, Defense, Power, Stab, TypeEffectiveness, Burn, Critical, Damage):-
     BaseMultiplier is ((50 * 2 / 5) + 2),
     AttackDefenseRatio is Attack / Defense,
     UnmodifiedDamage is ((BaseMultiplier * Power * AttackDefenseRatio) / 50 + 2),
-    Damage is UnmodifiedDamage * Stab * TypeEffectiveness * Burn * Critical.
+    Dmg is UnmodifiedDamage * Stab * TypeEffectiveness * Burn * Critical * -1,
+    Damage is round(Dmg).
 
-% pokemon(Nome, Tipo1, Tipo2, HP, FAtk, FDef, SAtk, SDef, Spd, Attack1, Attack2, Attack3, Attack4)
-% attack(Nome, Tipo, Categoria, Poder, Precisão, PP, MaxPP, Critico)
-% pokemon_battle(Nome, Pokemon, CurrentHP, Pp_Atk1, Pp_Atk2, Pp_Atk3, Pp_Atk4, Condicao)
+altera_condicao(Nome, Condicao):-
+    pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4, _),
+    retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
+    assertz(pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4, Condicao)).
+
+subtrai_pp(Nome, 1):- 
+    pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4,Condicao),
+    retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
+    N_Atk1 is Atk1-1,
+    assertz(pokemon_battle(Nome, Pokemon, Hp, N_Atk1, Atk2, Atk3, Atk4, Condicao)).
+
+subtrai_pp(Nome, 2):- 
+    pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4,Condicao),
+    retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
+    N_Atk2 is Atk2-1,
+    assertz(pokemon_battle(Nome, Pokemon, Hp, Atk1, N_Atk2, Atk3, Atk4, Condicao)).
+
+subtrai_pp(Nome, 3):- 
+    pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4,Condicao),
+    retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
+    N_Atk3 is Atk3-1,
+    assertz(pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, N_Atk3, Atk4, Condicao)).
+
+subtrai_pp(Nome, 4):- 
+    pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4,Condicao),
+    retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
+    N_Atk4 is Atk4-1,
+    assertz(pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, N_Atk4, Condicao)).
+
+utiliza_item(NomePkm, NomeItm):-
+        pokemon_battle(Nome, Pokemon, Hp, Atk1, Atk2, Atk3, Atk4,Condicao),
+        retract(pokemon_battle(Nome, _, _, _, _, _, _, _)),
+        NomeItm == 'Hyper Potion' -> altera_hp(NomePkm,120);
+        (
+            NomeItm == 'Full Restore' -> altera_condicao(NomePkm,'');!
+        ).
+
+choose_attack(NumAtk, Atk1, Atk2, Atk3, Atk4, TipoAtk, Categoria, Poder, Precisao, PP, MaxPP, Critico) :-
+    NumAtk =:= 1 -> attack(Atk1, TipoAtk, Categoria, Poder, Precisao, PP, MaxPP, Critico);
+    NumAtk =:= 2 -> attack(Atk2, TipoAtk, Categoria, Poder, Precisao, PP, MaxPP, Critico);
+    NumAtk =:= 3 -> attack(Atk3, TipoAtk, Categoria, Poder, Precisao, PP, MaxPP, Critico);
+    attack(Atk4, TipoAtk, Categoria, Poder, Precisao, PP, MaxPP, Critico).
+
+determina_critico(Critico, Critical):-
+     calcula_critico(Critico,Resultado_critico),
+     Resultado_critico == true -> Critical is 1.5; Critical is 1.0.
+
+determina_status(Condicao, TipoAtk, New_Condicao):-
+    random_between(1,100, R),
+    (R =< 10 -> R1 = true; R1 = false),
+    determina_status_aux(Condicao, TipoAtk, New_Condicao, R1).
+
+determina_status_aux(Condicao, _, Condicao, false):-!.
+determina_status_aux(Condicao, _, Condicao, true):- Condicao \= '', !.
+determina_status_aux('', TipoAtk, New_Condicao, true):- determina_condicao(TipoAtk, New_Condicao).
+
+determina_condicao_negativa('Queimando', 'Fisico', 0,5):-!.
+determina_condicao_negativa('Congelado', 'Fisico', 0,5):-!.
+determina_condicao_negativa('Paralisado', 'Especial', 0,5):-!.
+determina_condicao_negativa('Envenenado', 'Especial', 0,5):-!.
+determina_condicao_negativa('Sonolento', _, 0.75):-!.
+determina_condicao_negativa(_,_,1.0):-!.
 
 realiza_ataque(Nome1, Nome2, NumAtk):-
     NumAtk >= 1, NumAtk =< 4,
-    pokemon_battle(Nome1, pokemon(Nome1,_,_,_,Fatk1,_,Satk1,_,Spd1,Atk1,Atk2,Atk3,Atk4),Cur_Hp1,Pp_Atk1,Pp_Atk2,Pp_Atk3,Pp_Atk4,Condicao1),
-    pokemon_battle(Nome1, pokemon(Nome1,Tipo1,Tipo2,Hp2,_,Fdef2,_,Sdef2,Spd2,_,_,_,_),Cur_Hp2,_,_,_,_,Condicao2),
-
-    NumAtk =:= 1 -> attack(Atk1,TipoAtk,Categoria,Poder,Precisao,PP,MaxPP,Critico)
-    (
-        NumAtk =:= 2 -> attack(Atk2,TipoAtk,Categoria,Poder,Precisao,PP,MaxPP,Critico)
-        (
-            NumAtk =:= 3 -> attack(Atk3,TipoAtk,Categoria,Poder,Precisao,PP,MaxPP,Critico); 
-                attack(Atk4,TipoAtk,Categoria,Poder,Precisao,PP,MaxPP,Critico)
-        )
-    )
-
-    calcula_acerto(Precisao,Resultado_acerto),
+    pokemon_battle(Nome1, pokemon(Nome1,Tipo1,Tipo2,_,Fatk1,_,Satk1,_,Spd1,Atk1,Atk2,Atk3,Atk4),Cur_Hp1,Pp_Atk1,Pp_Atk2,Pp_Atk3,Pp_Atk4,Condicao1),
+    pokemon_battle(Nome2, pokemon(Nome2,Tipo3,Tipo4,Hp2,_,Fdef2,_,Sdef2,Spd2,_,_,_,_),Cur_Hp2,_,_,_,_,Condicao2),    
+    choose_attack(NumAtk, Atk1, Atk2, Atk3, Atk4, TipoAtk, Categoria, Poder, Precisao, PP, MaxPP, Critico),
     
-    Cur_Hp1 < 0 -> !;
-    (
-        Resultado_acerto == false -> !; 
-        (
-        calcula_critico(Critico,Resultado_critico),
-        pode_aplicar_status(R),
-        (R == true,Condicao2 == '')-> determina_condicao(TipoAtk, New_Condicao); determina_condicao('', New_Condicao),
+    (Cur_Hp1 =< 0 -> !;
+        (Resultado_acerto == false -> !;
+            (PP =< 0 -> !;
+                determina_critico(Critico, Critical),
+                determina_status(Condicao2, TipoAtk, New_Condicao),
+                determina_condicao_negativa(Condicao1, Categoria, Condicao_negativa),
+                eficiencia(TipoAtk, Tipo1, Tipo2, Eficiencia),
 
-        Categoria == 'Fisico' -> (Status_atk is Fatk1, Status_def is Fdef2); (Status_atk is Satk1, Status_def is Sdef2),
-        
-        ).
-    )
+                (Categoria == 'Fisico' -> (Status_atk is Fatk1, Status_def is Fdef2); (Status_atk is Satk1, Status_def is Sdef2)),
+                (TipoAtk == Tipo1 -> Stab is 1.5; (TipoAtk == Tipo2 -> Stab is 1.5; Stab is 1.0)),
+                calculate_damage(Status_atk, Status_def, Poder, Stab, Eficiencia, Condicao_negativa, Critical, Damage),
+
+                altera_hp(Nome2,Damage),
+                altera_condicao(Nome2, New_condicao),
+                subtrai_pp(Nome1, NumAtk)
+            )
+        )
+    ).
+
 
 main:-
     writeln('===== Sistema de Batalha Pokémon ====='),
     carregar_tudo,
-    
+            
     % Mostra alguns dados carregados
     writeln('\n=== Pokémons Carregados =='),
     findall(Nome, pokemon(Nome, _, _, _, _, _, _, _, _, _, _, _, _), ListaPokemons),
@@ -229,30 +281,31 @@ main:-
     
     % Testa a criação de uma batalha
     writeln('\n=== Teste de Batalha =='),
+
     gera_pokemon_battle_inicial('Pikachu'),
-    gera_pokemon_battle_inicial('Pidgeot'),
+    gera_pokemon_battle_inicial('Charizard'),
  
     % Fazendo testes     
 
-    quem_vai_primeiro('Pikachu','Pidgeot',X),
-    writeln(X),
-
-    eficiencia('Fogo','Agua','Eletrico', R),
-    writeln(R),
-
-    eh_super_efetivo('Fogo','Agua','Eletrico',R1),
-    writeln(R1),
-
-    altera_hp('Pidgeot',-30),
-    get_Hp('Pidgeot',A),
-    writeln(A),
-
     % Mostra o Pokémon em batalha
     writeln('\n=== Estado da Batalha =='),
-    pokemon_battle(Nome, Pokemon, HP, Atk1, Atk2, Atk3, Atk4, Condicao),
+    pokemon_battle('Charizard', Pokemon, HP, Atk1, Atk2, Atk3, Atk4, Condicao),
     write('Pokémon: '), writeln(Pokemon),
     write('HP: '), writeln(HP),
     write('Ataque 1: '), writeln(Atk1),
     write('Condição: '), writeln(Condicao),
-    
-    writeln('\n=== Fim do Teste ===').
+    writeln('\n=== Fim do Teste ==='),
+
+    writeln('\n===Teste de Batalha==='),
+    realiza_ataque('Pikachu','Charizard', 4),
+    pokemon_battle('Charizard',_,Hp_Atual,_,_,_,_,_),
+    writeln("Hp antigo é: "),
+    writeln(HP),
+    writeln("Hp atual é: "),
+    writeln(Hp_Atual),
+    realiza_ataque('Pikachu','Charizard', 2),
+    pokemon_battle('Charizard',_,New_Hp_atual,_,_,_,_,_),
+    writeln("Novo Hp é: "),
+    writeln(New_Hp_atual).
+
+
