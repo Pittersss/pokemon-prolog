@@ -9,6 +9,7 @@
 main:-
     selecionados(Selected),
     writeln(Selected),
+    write('AAAAAAAAAAAAAAAAAAAAAA'),
     writeln('===== Sistema de Batalha Pokémon ====='),
     carregar_tudo,
             

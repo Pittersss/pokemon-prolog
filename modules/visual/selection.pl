@@ -77,14 +77,27 @@ open_selection :-
     send(SelectionWindow, append, button('Confirmar', message(@prolog, confirm_selection)), below),
     send(SelectionWindow, open).
 
+% %% Processa a seleção
+% confirm_selection :-
+%     nb_getval(selected_pokemons, Selected),
+%     (   length(Selected, 6)
+%     -> 
+%         format('Pokémons selecionados: ~w~n', [Selected]),
+%         battle(Selected)
+%     ;   send(@display, inform, 'Selecione exatamente 6 Pokémons')
+%     ).
+
+
 %% Processa a seleção
 confirm_selection :-
     nb_getval(selected_pokemons, Selected),
     (   length(Selected, 6)
     -> 
         format('Pokémons selecionados: ~w~n', [Selected]),
+        retractall(selecionados(_)),
+        assertz(selecionados(Selected)),
         battle(Selected)
-    ;   send(@display, inform, 'Selecione exatamente 6 Pokémons')
+    ;   send(@display, inform, 'Selecione exatamente 4 Pokémons')
     ).
 
 
