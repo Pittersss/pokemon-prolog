@@ -58,7 +58,6 @@ create_menu :-
     send(Window, position, point(600, 150)).
 
 
-
 %% Tela de seleção
 open_selection :-
     % Reinicia a lista ao abrir nova seleção
