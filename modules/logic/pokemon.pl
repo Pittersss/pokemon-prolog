@@ -7,6 +7,7 @@
     processar_linha_eficiencia/1,
     carregar_pokemons/0,
     processar_linha_pokemon/1,
+    gera_pokemons_battle/2,
     gera_pokemon_battle_inicial/1,
     buscar_ataque/2,
     buscar_pokemon/2,
@@ -103,6 +104,12 @@ gera_pokemon_battle_inicial(NomePokemon) :-
         Pp_Atk4,
         ''
     )).
+
+gera_pokemons_battle(ListaPokemons, R):-
+    retractall(pokemon_battle(_, _, _, _, _, _, _)),
+    maplist(gera_pokemon_battle_inicial, ListaPokemons),
+    findall(P, pokemon_battle(_, _, _, _, _, _, _)=P, R).
+
 
 % Busca ataque com base no nome
 buscar_ataque(Nome, Attack) :-

@@ -95,8 +95,7 @@ confirm_selection :-
         format('Pokémons selecionados: ~w~n', [Selected]),
         retractall(selecionados(_)),
         assertz(selecionados(Selected)),
-        nb_getval(selection_callback, Callback),
-        call(Callback, Selected)
+        main:handle_selected_pokemons(Selected)
     ;   send(@display, inform, 'Selecione exatamente 6 Pokémons')
     ).
 
