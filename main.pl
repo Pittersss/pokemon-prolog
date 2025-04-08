@@ -1,14 +1,70 @@
+:- module(main, [battle_flux/1]).
 :- use_module(library(pce)).
 :- use_module('modules/visual/menu').
 :- use_module('modules/logic/pokemon').
-:- dynamic selecionados/1.
-:- create_menu.
+
+:- initialization(init).
+
+init :-
+    % Salva referência para continuar o jogo após seleção
+    nb_setval(selection_callback, main:handle_selected_pokemons),
+    create_menu.
+
+% Lógica da gameplay
+handle_selected_pokemons(Selecionados) :-
+    maplist(pokemon:criar_battle_pokemon, Selecionados, ListaBattle),
+    battle_flux(ListaBattle).
+
+battle_flux(ListaBattle) :-
+    format("Iniciando batalha com pokémons: ~w~n", [ListaBattle]).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 % ATENÇÃO: ESSE MAIN É APENAS PARA PROPÓSITOS DE TESTE, OU SEJA, PODE DELETÁ-LO
 main:-
     selecionados(Selected),
     writeln(Selected),
+    write('AAAAAAAAAAAAAAAAAAAAAA'),
     writeln('===== Sistema de Batalha Pokémon ====='),
     carregar_tudo,
             
