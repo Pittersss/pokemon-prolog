@@ -1,4 +1,5 @@
 :- module(battle_system, [battle/2]).
+:- use_module('logger').
 :- use_module('pokemon').  % Certifique-se de que o módulo de lógica dos pokémons esteja disponível
 
 % Predicado auxiliar para extrair o Pokémon ativo (head) de um time.
@@ -10,7 +11,6 @@ active_pokemon([pokemon_battle(Name,_,_,_,_,_,_)|Rest], Name, Rest).
 % a batalha enquanto ambos os times possuírem pelo menos um Pokémon.
 %
 battle(TimeUser, TimeBot) :-
-    format('~n=== BATALHA INICIADA ===~n~nTime: ~w~n~n'),
     battle_system(TimeUser, TimeBot).
 
 battle_system(TeamUser, TeamBot) :-
@@ -26,11 +26,9 @@ battle_system(TeamUser, TeamBot) :-
          active_pokemon(TeamUser, UserPkm, RestUser),
          active_pokemon(TeamBot, BotPkm, RestBot),
          format('Iniciando duelo entre ~w e ~w~n', [UserPkm, BotPkm]),
-         flush_output(user_output),
          battle_pokemon(UserPkm, BotPkm, Winner),
          ( Winner = BotPkm ->
              format('Seu Pokémon ~w morreu!~n', [UserPkm]),
-             flush_output(user_output),
              % Remove o Pokémon do usuário; time do bot permanece
              NewTeamUser = RestUser,
              NewTeamBot = TeamBot
