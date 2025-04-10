@@ -14,7 +14,7 @@
 Acesse e instale o Swipl em: https://www.swi-prolog.org<br>
 
 ### Abra o diretório do projeto e execute:
-[main].
+[main]. <br>
 main:run_game
 
 OBS: A seleção dos pokémons não necessita do ponto final do comando!
