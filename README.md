@@ -11,7 +11,7 @@
 * [Pedro Henrique Malaquias da Silva](https://github.com/Pittersss)
 
 ## Instruções para a Execução
-Acesse e instale o Swipl em: https://www.haskell.org/ghcup/<br>
+Acesse e instale o Swipl em: https://www.swi-prolog.org<br>
 
 ### Abra o diretório do projeto e execute:
 [main].
