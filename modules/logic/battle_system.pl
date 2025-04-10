@@ -58,35 +58,40 @@ battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
         ; Opcao =:= 3 ->
               gira_lista([UserPkm | RestUser], NewUserTeam),
               format('Você trocou de Pokémon!~n'),
-              battle_system(NewUserTeam, [BotPkm | []]),
+              battle_system(NewUserTeam, [BotPkm]),
               !, fail
         ;
             imprimeAtaques(UserPkm),
             write('Escolha seu ataque (1-4): '),
             read(UserAttack),
-            realiza_ataque(UserPkm, BotPkm, UserAttack),
-            get_Hp(BotPkm, NewHPBot),
-            format('Após seu ataque, HP de ~w: ~w~n', [BotPkm, NewHPBot]),
-            flush_output(user_output),
-            ( NewHPBot =< 0 ->
-                Winner = UserPkm,
-                NewRestUser = RestUser
-            ;
-                % Turno do Bot
-                infoBtl(UserPkm, BotPkm),
-                format('Bot ~w ataca agora!~n', [BotPkm]),
-                imprimeAtaques(BotPkm),
-                random_between(1, 4, BotAttack),
-                realiza_ataque(BotPkm, UserPkm, BotAttack),
-                get_Hp(UserPkm, NewHPUser),
-                format('Após o ataque do Bot, HP de ~w: ~w~n', [UserPkm, NewHPUser]),
+            ( between(1, 4, UserAttack) ->
+                realiza_ataque(UserPkm, BotPkm, UserAttack),
+                get_Hp(BotPkm, NewHPBot),
+                format('Após seu ataque, HP de ~w: ~w~n', [BotPkm, NewHPBot]),
                 flush_output(user_output),
-                ( NewHPUser =< 0 ->
-                    Winner = BotPkm,
+                ( NewHPBot =< 0 ->
+                    Winner = UserPkm,
                     NewRestUser = RestUser
                 ;
-                    battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
+                    % Turno do Bot
+                    infoBtl(UserPkm, BotPkm),
+                    format('Bot ~w ataca agora!~n', [BotPkm]),
+                    imprimeAtaques(BotPkm),
+                    random_between(1, 4, BotAttack),
+                    realiza_ataque(BotPkm, UserPkm, BotAttack),
+                    get_Hp(UserPkm, NewHPUser),
+                    format('Após o ataque do Bot, HP de ~w: ~w~n', [UserPkm, NewHPUser]),
+                    flush_output(user_output),
+                    ( NewHPUser =< 0 ->
+                        Winner = BotPkm,
+                        NewRestUser = RestUser
+                    ;
+                        battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
+                    )
                 )
+            ; 
+                writeln('\nAtaque inválido! Por favor, escolha um número entre 1 e 4.'),
+                battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
             )
         )
     ).

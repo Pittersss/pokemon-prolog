@@ -138,7 +138,7 @@ quem_vai_primeiro(Nome1, Nome2, 2):-
 
 % Calcula eficiência de um ataque contra um pokemon
 eficiencia(TipoAtk, Tipo1, Tipo2, R):- 
-    write(TipoAtk), write(Tipo1), calcula_eficiencia(TipoAtk, Tipo1, R1),write("Chegou Aqui") calcula_eficiencia(TipoAtk, Tipo2, R2), 
+    calcula_eficiencia(TipoAtk, Tipo1, R1),calcula_eficiencia(TipoAtk, Tipo2, R2), 
     R is R1*R2.
 
 % Determina se um golpe é super efetivo ou não
