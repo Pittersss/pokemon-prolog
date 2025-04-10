@@ -1,4 +1,3 @@
-:- use_module(library(pce)).
 :- use_module('modules/logic/pokemon').
 :- use_module('modules/logic/battle_system').
 

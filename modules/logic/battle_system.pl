@@ -1,131 +1,107 @@
 :- module(battle_system, [battle/2, pokemons_disponiveis/1, processar_entrada/2]).
-:- use_module('pokemon').  % Certifique-se de que o módulo de lógica dos pokémons esteja disponível
-:- use_module('historico').
+:- use_module('pokemon').
 
-%% active_pokemon(+Time, -Pokemon, -Resto)
-%
-% Extrai o primeiro Pokémon (ativo) da lista.
+% Extrai o primeiro Pokémon da lista
 active_pokemon([Pokemon|Rest], Pokemon, Rest).
 
-%% battle(+TimeUsuario, +TimeBot)
-%
-% Inicia a batalha entre os times do usuário e do bot.
-% Quando um dos times estiver vazio, exibe a mensagem apropriada.
-%
+% Inicia a batalha
 battle(TimeUser, TimeBot) :-
-     iniciar_placar,
     battle_system(TimeUser, TimeBot),
     !.
 
-%% battle_system(+TeamUser, +TeamBot)
-%
-% Gerencia o fluxo global da batalha.
-% Se o time do usuário for vazio, imprime derrota.
-% Se o time do bot for vazio, imprime vitória.
-% Caso contrário, extrai os Pokémon ativos e processa o duelo.
-%
+% Condições de fim da batalha
 battle_system([], _) :-
-    format('Você perdeu a batalha!~n'),
-    incrementa_derrota,
-    get_estatisticas(Out),
-    writeln(Out),
-    !,
-    halt.
+    format('Você perdeu a batalha!~n'), !.
 battle_system(_, []) :-
-    format('Você venceu a batalha!~n'),
-    incrementa_vitoria,
-    get_estatisticas(Out),
-    writeln(Out),
-    !,
-    halt.
+    format('Você venceu a batalha!~n'), !.
+
+% Fluxo da batalha
 battle_system(TeamUser, TeamBot) :-
     active_pokemon(TeamUser, UserPkm, RestUser),
     active_pokemon(TeamBot, BotPkm, RestBot),
     format('Iniciando duelo entre ~w e ~w~n', [UserPkm, BotPkm]),
-    battle_pokemon(UserPkm, BotPkm, Winner),
+    battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, NewTeamBot),
     ( Winner = BotPkm ->
          format('Seu Pokémon ~w morreu!~n', [UserPkm]),
-         % Remove o Pokémon do usuário; o time do bot permanece inalterado
-         NewTeamUser = RestUser,
-         NewTeamBot = TeamBot
+         battle_system(NewRestUser, NewTeamBot)
     ; Winner = UserPkm ->
          format('O Pokémon do Bot ~w morreu!~n', [BotPkm]),
-         % Remove o Pokémon do bot; o time do usuário permanece inalterado
-         NewTeamUser = TeamUser,
-         NewTeamBot = RestBot
-    ),
-    battle_system(NewTeamUser, NewTeamBot).
+         battle_system(TeamUser, RestBot)
+    ; % Caso especial de troca
+         true
+    ).
 
-%% battle_pokemon(+UserPkm, +BotPkm, -Winner)
-%
-% Realiza os turnos de ataque entre os dois Pokémon ativos.
-% O Bot sempre ataca primeiro. Após cada ataque, verifica se algum dos
-% dois Pokémon foi derrotado (HP <= 0) e, caso contrário, repete o turno.
-%
-battle_pokemon(UserPkm, BotPkm, Winner) :-
+% Turno com possibilidade de ataque, uso de item ou troca
+battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot) :-
     get_Hp(UserPkm, HPUser),
     get_Hp(BotPkm, HPBot),
     ( HPUser =< 0 ->
-         Winner = BotPkm,
-         !
+         Winner = BotPkm, !
     ; HPBot =< 0 ->
-         Winner = UserPkm,
-         !
+         Winner = UserPkm, !
     ;
-         % Turno do Usuário: solicita escolha do ataque
-         infoBtl(UserPkm, BotPkm),
-         write('Escolha seu ataque (1-4): '),
-         imprimeAtaques(UserPkm),
-          read_line_to_codes(user_input, Codes),
-          string_codes(String, Codes),
-          normalize_space(string(EntradaSemEspaco), String),
-          number_string(UserAttack, EntradaSemEspaco),
-         realiza_ataque(UserPkm, BotPkm, UserAttack),
-         
-         get_Hp(BotPkm, NewHPBot),
-         format('Após seu ataque, HP de ~w: ~w~n', [BotPkm, NewHPBot]),
-         flush_output(user_output),
-         ( NewHPBot =< 0 ->
-             Winner = UserPkm,
-             !
-         ;
-             % Turno do Bot: escolhe um ataque aleatório de 1 a 4
-             infoBtl(UserPkm, BotPkm),
-             format('Bot ~w ataca agora!~n', [BotPkm]),
-             imprimeAtaques(BotPkm),
-             random_between(1, 4, BotAttack),
-             realiza_ataque(BotPkm, UserPkm, BotAttack),
-             
-             get_Hp(UserPkm, NewHPUser),
-             format('Após o ataque do Bot, HP de ~w: ~w~n', [UserPkm, NewHPUser]),
-             flush_output(user_output),
-             ( NewHPUser =< 0 ->
-                  Winner = BotPkm,
-                  !
-             ;
-                  % Se nenhum foi derrotado, repete o turno
-                  battle_pokemon(UserPkm, BotPkm, Winner)
-             )
-         )
+        infoBtl(UserPkm, BotPkm),
+        writeln('O que deseja fazer?'),
+        writeln('1. Atacar'),
+        writeln('2. Usar item'),
+        writeln('3. Trocar de Pokémon'),
+        read(Opcao),
+        ( Opcao =:= 2 ->
+              writeln('Qual item deseja usar?'),
+              writeln('1. Hyper Potion'),
+              writeln('2. Full Restore'),
+              read(EscolhaItem),
+              (EscolhaItem =:= 1 -> Resultado = 'Hyper Potion' ; Resultado = 'Full Restore'),
+              usar_item(UserPkm, Resultado),
+              format('Você usou um item: ~w~n', [Resultado]),
+              battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
+        ; Opcao =:= 3 ->
+              gira_lista([UserPkm | RestUser], NewUserTeam),
+              format('Você trocou de Pokémon!~n'),
+              battle_system(NewUserTeam, [BotPkm | []]),
+              !, fail
+        ;
+            imprimeAtaques(UserPkm),
+            write('Escolha seu ataque (1-4): '),
+            read(UserAttack),
+            realiza_ataque(UserPkm, BotPkm, UserAttack),
+            get_Hp(BotPkm, NewHPBot),
+            format('Após seu ataque, HP de ~w: ~w~n', [BotPkm, NewHPBot]),
+            flush_output(user_output),
+            ( NewHPBot =< 0 ->
+                Winner = UserPkm,
+                NewRestUser = RestUser
+            ;
+                % Turno do Bot
+                infoBtl(UserPkm, BotPkm),
+                format('Bot ~w ataca agora!~n', [BotPkm]),
+                imprimeAtaques(BotPkm),
+                random_between(1, 4, BotAttack),
+                realiza_ataque(BotPkm, UserPkm, BotAttack),
+                get_Hp(UserPkm, NewHPUser),
+                format('Após o ataque do Bot, HP de ~w: ~w~n', [UserPkm, NewHPUser]),
+                flush_output(user_output),
+                ( NewHPUser =< 0 ->
+                    Winner = BotPkm,
+                    NewRestUser = RestUser
+                ;
+                    battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
+                )
+            )
+        )
     ).
 
-
+% Exibe o estado atual da batalha
 infoBtl(UsuPkmn, EnPkmn):-
     pokemon_battle(UsuPkmn, UHP, _, _, _, _, UCond),
     pokemon_battle(EnPkmn, EHP, _, _, _, _, ECond),
-    
-    %item('Hyper Potion', HQtd),
-    %write("Chegou Aqui"),
-    %item('Full Restore', FQtd),
     writeln('\n=============================='),
-    format('Seu Pokemon: ~w\nCurrent HP: ~w\nCondição: ~w\n', [UsuPkmn, UHP, UCond]),
-    %format('Hyper Potion: ~w\nFull Restore: ~w', [HQtd, FQtd]),
-    writeln('\n=============================='),
-    format('Pokémon do adversário: ~w\nCurrent HP: ~w\nCondicao: ~w', [EnPkmn, EHP, ECond]),
-    writeln('\n==============================\n').
+    format('Seu Pokémon: ~w\nHP: ~w\nCondição: ~w\n', [UsuPkmn, UHP, UCond]),
+    writeln('------------------------------'),
+    format('Pokémon do Bot: ~w\nHP: ~w\nCondição: ~w\n', [EnPkmn, EHP, ECond]),
+    writeln('==============================\n').
 
-
-
+% Exibe ataques disponíveis
 imprimeAtaques(Pkmn):-
     pokemon(Pkmn, _, _, _, _, _, _, _, _, Atk1, Atk2, Atk3, Atk4),
     pokemon_battle(Pkmn, _, PP1, PP2, PP3, PP4, _),
@@ -138,7 +114,7 @@ imprimeAtaques(Pkmn):-
            [Atk1, PP1, MaxPP1, Atk2, PP2, MaxPP2, Atk3, PP3, MaxPP3, Atk4, PP4, MaxPP4]),
     writeln('\n==============================\n').
 
-
+% Lista de opções de Pokémon
 num_pokemon(1, 'Charizard').
 num_pokemon(2, 'Blastoise').
 num_pokemon(3, 'Venusaur').
@@ -170,3 +146,7 @@ converter_validar([P|Ps], [N|Ns]) :-
     integer(N),
     between(1, 10, N),
     converter_validar(Ps, Ns).
+
+% Gira a lista colocando o primeiro no final
+gira_lista([Head|Tail], NewList) :-
+    append(Tail, [Head], NewList).
