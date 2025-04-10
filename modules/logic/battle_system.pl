@@ -25,11 +25,11 @@ battle(TimeUser, TimeBot) :-
 battle_system([], _) :-
     format('Você perdeu a batalha!~n'),
     !,
-    true.
+    halt.
 battle_system(_, []) :-
     format('Você venceu a batalha!~n'),
     !,
-    true.
+    halt.
 battle_system(TeamUser, TeamBot) :-
     active_pokemon(TeamUser, UserPkm, RestUser),
     active_pokemon(TeamBot, BotPkm, RestBot),
@@ -68,7 +68,10 @@ battle_pokemon(UserPkm, BotPkm, Winner) :-
          infoBtl(UserPkm, BotPkm),
          write('Escolha seu ataque (1-4): '),
          imprimeAtaques(UserPkm),
-         read(UserAttack),
+          read_line_to_codes(user_input, Codes),
+          string_codes(String, Codes),
+          normalize_space(string(EntradaSemEspaco), String),
+          number_string(UserAttack, EntradaSemEspaco),
          realiza_ataque(UserPkm, BotPkm, UserAttack),
          
          get_Hp(BotPkm, NewHPBot),
