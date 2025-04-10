@@ -290,7 +290,7 @@ realiza_ataque(Nome1, Nome2, NumAtk):-
                 calculate_damage(Status_atk, Status_def, Poder, Stab, 1, Condicao_negativa, Critical, Damage),
 
                 altera_hp(Nome2,Damage),
-                altera_condicao(Nome2, New_condicao),
+                altera_condicao(Nome2, New_Condicao),
                 subtrai_pp(Nome1, NumAtk)
             )
         )
