@@ -1,5 +1,6 @@
 :- module(battle_system, [battle/2, pokemons_disponiveis/1, processar_entrada/2]).
 :- use_module('pokemon').  % Certifique-se de que o módulo de lógica dos pokémons esteja disponível
+:- use_module('historico').
 
 %% active_pokemon(+Time, -Pokemon, -Resto)
 %
@@ -12,6 +13,7 @@ active_pokemon([Pokemon|Rest], Pokemon, Rest).
 % Quando um dos times estiver vazio, exibe a mensagem apropriada.
 %
 battle(TimeUser, TimeBot) :-
+     iniciar_placar,
     battle_system(TimeUser, TimeBot),
     !.
 
@@ -24,10 +26,16 @@ battle(TimeUser, TimeBot) :-
 %
 battle_system([], _) :-
     format('Você perdeu a batalha!~n'),
+    incrementa_derrota,
+    get_estatisticas(Out),
+    writeln(Out),
     !,
     halt.
 battle_system(_, []) :-
     format('Você venceu a batalha!~n'),
+    incrementa_vitoria,
+    get_estatisticas(Out),
+    writeln(Out),
     !,
     halt.
 battle_system(TeamUser, TeamBot) :-
