@@ -7,7 +7,6 @@
     processar_linha_eficiencia/1,
     carregar_pokemons/0,
     processar_linha_pokemon/1,
-    gera_pokemons_battle/2,
     gera_pokemon_battle_inicial/1,
     buscar_ataque/2,
     buscar_pokemon/2,
@@ -15,7 +14,6 @@
     get_Hp/2,
     get_Spd/2,
     quem_vai_primeiro/3,
-    eficiencia/4,
     eh_super_efetivo/4,
     determina_condicao/2,
     calcula_critico/2,
@@ -27,6 +25,7 @@
     altera_condicao/2,
     subtrai_pp/2,
     utiliza_item/2,
+    item/2,
     choose_attack/12,
     determina_critico/2,
     determina_status/3,
@@ -54,6 +53,7 @@ iniciar_itens :-
 
 % Inicialização completa
 carregar_tudo :-
+    retractall(pokemon_battle(_,_,_,_,_,_,_)),
     carregar_pokemons,
     carregar_eficiencias,
     carregar_ataques.
@@ -105,12 +105,6 @@ gera_pokemon_battle_inicial(NomePokemon) :-
         ''
     )).
 
-gera_pokemons_battle(ListaPokemons, R):-
-    retractall(pokemon_battle(_, _, _, _, _, _, _)),
-    maplist(gera_pokemon_battle_inicial, ListaPokemons),
-    findall(P, pokemon_battle(_, _, _, _, _, _, _)=P, R).
-
-
 % Busca ataque com base no nome
 buscar_ataque(Nome, Attack) :-
     attack(Nome, Tipo, Categoria, Poder, Precisao, PP, MaxPP, Critico),
@@ -144,7 +138,7 @@ quem_vai_primeiro(Nome1, Nome2, 2):-
 
 % Calcula eficiência de um ataque contra um pokemon
 eficiencia(TipoAtk, Tipo1, Tipo2, R):- 
-    calcula_eficiencia(TipoAtk, Tipo1, R1), calcula_eficiencia(TipoAtk, Tipo2, R2), 
+    write(TipoAtk), write(Tipo1), calcula_eficiencia(TipoAtk, Tipo1, R1),write("Chegou Aqui") calcula_eficiencia(TipoAtk, Tipo2, R2), 
     R is R1*R2.
 
 % Determina se um golpe é super efetivo ou não
@@ -289,11 +283,11 @@ realiza_ataque(Nome1, Nome2, NumAtk):-
                 determina_critico(Critico, Critical),
                 determina_status(Condicao2, TipoAtk, New_Condicao),
                 determina_condicao_negativa(Condicao1, Categoria, Condicao_negativa),
-                eficiencia(TipoAtk, Tipo3, Tipo4, Eficiencia),
+                
                 
                 (Categoria == 'Fisico' -> (Status_atk is Fatk1, Status_def is Fdef2); (Status_atk is Satk1, Status_def is Sdef2)),
                 (TipoAtk == Tipo1 -> Stab is 1.5; (TipoAtk == Tipo2 -> Stab is 1.5; Stab is 1.0)),
-                calculate_damage(Status_atk, Status_def, Poder, Stab, Eficiencia, Condicao_negativa, Critical, Damage),
+                calculate_damage(Status_atk, Status_def, Poder, Stab, 1, Condicao_negativa, Critical, Damage),
 
                 altera_hp(Nome2,Damage),
                 altera_condicao(Nome2, New_condicao),
