@@ -34,7 +34,8 @@
     realiza_ataque/3,
     pokemon/13,
     attack/8,
-    pokemon_battle/7
+    pokemon_battle/7,
+    item/2
 ]).
 
 :- use_module(library(csv)).
@@ -236,7 +237,7 @@ utiliza_item(NomePkm, NomeItm):-
         assertz(item(NomeItm,NovaQtd)),
         NomeItm == 'Hyper Potion' -> altera_hp(NomePkm,120);
         (
-            NomeItm == 'Full Restore' -> altera_condicao(NomePkm);!
+            NomeItm == 'Full Restore' -> altera_condicao(NomePkm,'');!
         ).
 
 % Função que carrega informações de ataque

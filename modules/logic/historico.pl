@@ -2,8 +2,7 @@
     [iniciar_placar/0,
      incrementa_vitoria/0,
      incrementa_derrota/0,
-     get_estatisticas/1,
-     reset_placar/0]).
+     get_estatisticas/1]).
 
 :- use_module(library(csv)).
 :- dynamic placar/2.  % placar(Partidas, Vitorias)
@@ -67,16 +66,5 @@ incrementa_derrota :-
 get_estatisticas(Estatisticas) :-
     placar(P, V),
     format(atom(Estatisticas),
-        'Partidas: ~d\nVitórias: ~d', 
+        'Partidas jogadas: ~d\nNúmero de vitórias: ~d', 
         [P, V]).
-
-% Reseta o placar, precisa ver se vai ser necessário, senão tira
-reset_placar :-
-    retractall(placar(_, _)),
-    assertz(placar(0, 0)),
-    salvar_placar.
-
-teste:- iniciar_placar, get_estatisticas(X), writeln(X), 
-        incrementa_derrota, incrementa_derrota, incrementa_vitoria, 
-        writeln('Acrescido 3 partidas e 1 vitoria:'),
-        get_estatisticas(Y), writeln(Y).

@@ -1,5 +1,6 @@
 :- module(battle_system, [battle/2, pokemons_disponiveis/1, processar_entrada/2]).
 :- use_module('pokemon').
+:- use_module('historico').
 
 % Extrai o primeiro Pokémon da lista
 active_pokemon([Pokemon|Rest], Pokemon, Rest).
@@ -11,9 +12,19 @@ battle(TimeUser, TimeBot) :-
 
 % Condições de fim da batalha
 battle_system([], _) :-
-    format('Você perdeu a batalha!~n'), !.
+    format('Você perdeu a batalha!~n'),
+    incrementa_derrota,
+    get_estatisticas(Out),
+    writeln(Out),
+    !,
+    halt.
 battle_system(_, []) :-
-    format('Você venceu a batalha!~n'), !.
+    format('Você venceu a batalha!~n'),
+    incrementa_vitoria,
+    get_estatisticas(Out),
+    writeln(Out),
+    !,
+    halt.
 
 % Fluxo da batalha
 battle_system(TeamUser, TeamBot) :-
@@ -52,7 +63,7 @@ battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
               writeln('2. Full Restore'),
               read(EscolhaItem),
               (EscolhaItem =:= 1 -> Resultado = 'Hyper Potion' ; Resultado = 'Full Restore'),
-              usar_item(UserPkm, Resultado),
+              utiliza_item(UserPkm, Resultado),
               format('Você usou um item: ~w~n', [Resultado]),
               battle_pokemon(UserPkm, BotPkm, Winner, RestUser, NewRestUser, TeamBot, TeamBot)
         ; Opcao =:= 3 ->
